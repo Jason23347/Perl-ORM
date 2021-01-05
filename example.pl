@@ -9,6 +9,7 @@ use lib dirname(__FILE__) . '/lib';
 
 use dao::db;
 use book;
+use author;
 
 # Create database connection at first
 our $db = dao::db->new( "SQLite", "database.db" )->boot();
@@ -50,6 +51,27 @@ my @arr = $book->get();
 # Query with condition
 @arr = $book->where( "title = ?", "hello world" )->get();
 print Dumper(@arr);
+
+print "\n";
+
+# Create two authors
+my $author = author->new($db);
+$author->create(
+    {
+        name => "John Smith",
+    }
+);
+$author->create(
+    {
+        name => "Jow Blow",
+    }
+);
+
+# Query with relationships
+$author->with('books')->find(1);
+$book->with('author')->get();
+
+print "\n";
 
 # Update and delete
 printf "%d rows with title 'hello world' deleted\n",
