@@ -101,7 +101,7 @@ sub get {
     my @params = (), $conds = "";
     if ( defined $self->{_conditions} ) {
         @params = $self->{_conditions}->{params};
-        $conds = "WHERE " . $self->{_conditions}->{string};
+        $conds  = "WHERE " . $self->{_conditions}->{string};
         undef $self->{_conditions};
     }
 
@@ -187,8 +187,26 @@ sub destroy {
 }
 
 sub updateOrCreate {
-    my ( $self, $hash ) = @_;
-    my $orm = $self->new( $self->{_db} );
+    my $self  = shift;
+    my $class = ref $self;
+    my $orm, $db;
+
+    if ( ( ref( $_[0] ) ) eq dao::db ) {
+        $db = shift;
+    }
+    elsif ( $class ) {
+        $db = $self->{_db};
+    }
+
+    unless ( $class ) {
+        $class = $self;
+    }
+
+    $orm = $class->new($db);
+
+    return 1;
+
+    # my $orm = $self->new($db);
     foreach my $key ( keys %{$hash} ) {
         $orm->{$key} = $hash->{$key};
     }
