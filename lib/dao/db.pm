@@ -35,10 +35,12 @@ sub _prepare {
     my ( $self, $query ) = @_;
 
     # FIXME: Is caching necessary?
-    return $self->{_dth}->prepare($query);
+    unless ( $self->{_dth}->prepare($query) ) {
+        warn "Error while excuting: " . $query;
+    }
 }
 
-sub excuteWithReturn {
+sub excuteWithHandle {
     my ( $self, $query ) = ( shift, shift );
 
     my $sth = $self->_prepare($query);
@@ -50,9 +52,22 @@ sub excuteWithReturn {
     return $sth;
 }
 
+sub excuteWithReturn {
+    my ( $self, $query ) = ( shift, shift );
+
+    my $sth = $self->_prepare($query);
+    my $res = $sth->execute(@_);
+    unless ($res) {
+        warn $sth->errstr;
+        return undef;
+    }
+
+    return $res;
+}
+
 sub excute {
     my $self = shift;
-    my $sth  = $self->excuteWithReturn(@_);
+    my $sth  = $self->excuteWithHandle(@_);
     return $sth->finish();
 }
 

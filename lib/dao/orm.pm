@@ -55,7 +55,7 @@ sub _create_table {
 sub find {
     my ( $self, $key ) = @_;
 
-    my $sth = $self->{_db}->excuteWithReturn(
+    my $sth = $self->{_db}->excuteWithHandle(
         "SELECT * from "
           . $self->{_table}
           . " where "
@@ -106,7 +106,7 @@ sub get {
     }
 
     my $sth =
-      $self->{_db}->excuteWithReturn(
+      $self->{_db}->excuteWithHandle(
         "SELECT " . $fields . " FROM " . $self->{_table} . " " . $conds,
         @params );
 
@@ -116,6 +116,13 @@ sub get {
     }
     $sth->finish();
     return @array;
+}
+
+sub assign {
+    my ( $self, $hash ) = @_;
+    foreach my $key ( keys %{$hash} ) {
+        $self->{$key} = $hash->{$key};
+    }
 }
 
 sub save {
@@ -157,7 +164,7 @@ sub save {
     }
     $fields =~ s/^,//;
     $list   =~ s/^,//;
-    my $sth = $self->{_db}->excuteWithReturn(
+    my $sth = $self->{_db}->excuteWithHandle(
         "INSERT INTO "
           . $self->{_table} . " ("
           . $fields
@@ -170,52 +177,92 @@ sub save {
 }
 
 sub destroy {
-    my ($self) = @_;
+    my ( $self, $id ) = @_;
     my $primary_key = $self->{_primary_key};
-    unless ( defined $self->{$primary_key} ) {
-        warn "destroy failed: "
-          . $primary_key
-          . " not set for "
-          . ( ref $self );
-        return undef;
+    my @cond_params, $cond_str;
+    my $query;
+
+    # WHERE conditions
+    if ( defined $self->{_conditions} ) {
+        @cond_params = $self->{_conditions}->{params};
+        $cond_str    = " WHERE " . $self->{_conditions}->{string};
+        undef $self->{_conditions};
+        $query = "DELETE FROM " . $self->{_table} . $cond_str;
+    }
+    else {
+        unless ( defined $self->{$primary_key} ) {
+            warn "orm "
+              . ( ref $self )
+              . " destroy failed: Please specify where condition or assign "
+              . $primary_key;
+            return undef;
+        }
+        $query =
+          "DELETE FROM " . $self->{_table} . " WHERE " . $primary_key . "=?";
+        push @cond_params, $self->{$primary_key};
     }
 
     # TODO Soft delete
-    return $self->{_db}->excute(
-        "DELETE FROM " . $self->{_table} . " WHERE " . $primary_key . "=?",
-        $self->{$primary_key} );
+    return $self->{_db}->excuteWithReturn( $query, @cond_params );
 }
 
-sub updateOrCreate {
+sub update {
+    my ( $self, $hash ) = @_;
+    unless ( %{$hash} ) {
+        warn "Empty hash";
+        return 0;
+    }
+
+    # WHERE conditions
+    my @cond_params, $cond_str;
+    if ( defined $self->{_conditions} ) {
+        @cond_params = $self->{_conditions}->{params};
+        $cond_str    = " WHERE " . $self->{_conditions}->{string};
+        undef $self->{_conditions};
+    }
+
+    my $qyery  = "";
+    my @values = ();
+    foreach my $key ( keys %{$hash} ) {
+        unless ( $key =~ /^_|^$primary_key\$|^\$/ ) {
+            $query .= ",`$key`=?";
+            push @values, $hash->{$key};
+        }
+    }
+    $query =~ s/^,//;
+    $query = "UPDATE " . $self->{_table} . " set " . $query . $cond_str;
+    printf "%s\n", $query;
+    $self->{_db}->excute( $query, @values, @cond_params );
+}
+
+sub create {
     my $self  = shift;
     my $class = ref $self;
     my $orm, $db;
 
+    undef $self->{ $self->{_primary_key} };
+
     if ( ( ref( $_[0] ) ) eq dao::db ) {
         $db = shift;
     }
-    elsif ( $class ) {
+    elsif ($class) {
         $db = $self->{_db};
     }
 
-    unless ( $class ) {
+    unless ($class) {
         $class = $self;
     }
 
     $orm = $class->new($db);
 
-    # my $orm = $self->new($db);
-    foreach my $key ( keys %{$hash} ) {
-        $orm->{$key} = $hash->{$key};
-    }
+    my $hash = shift;
+    $orm->assign($hash);
     $orm->save();
-}
 
-sub delete {
-    my ( $class, $db, $id ) = @_;
-    my $orm = $class->new($db);
-    $orm->{ $orm->${_primary_key} } = $id;
-    $orm->destroy();
+    if ( ref($self) ) {
+        $self->assign($orm);
+        undef $orm;
+    }
 }
 
 1;

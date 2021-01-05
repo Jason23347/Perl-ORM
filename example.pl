@@ -15,23 +15,27 @@ our $db = dao::db->new( "SQLite", "database.db" )->boot();
 my $book = book->new($db);    # Create an orm object
 $book->sync();                # Ensure the table exists
 
-$book->updateOrCreate(
+$book->create(
     {
-        # id          => 1,                    # unset to update
         title       => "test title",
         category    => "test cate",
         author      => "test author",
         last_update => time(),
-        word_count  => 12345678,
+        word_count  => 5678,
     }
 );
 
-# Could be call statically
-book->updateOrCreate(
+printf "insert book with id %d\n", $book->{id};
+
+# Could be call statically too
+book->create(
     $db,
     {
-        id    => 1,
-        title => "hello world",
+        title       => "hello world",
+        category    => "test cate2",
+        author      => "test author2",
+        last_update => time(),
+        word_count  => 1234,
     }
 );
 
@@ -44,5 +48,12 @@ $book->save();
 my @arr = $book->get();
 
 # Query with condition
-@arr = $book->where( "word_count = ?", 12345678 )->get();
+@arr = $book->where( "title = ?", "hello world" )->get();
 print Dumper(@arr);
+
+# Update and delete
+printf "%d rows with title 'hello world' deleted\n",
+  $book->where( "title = ?", "hello world" )->destroy();
+printf "%d rows with id %d deleted\n", $book->destroy(), $book->{id};
+printf "%d rows with id %d deleted\n", $book->where( "id = ?", 2 )->destroy(),
+  $book->{id};

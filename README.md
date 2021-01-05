@@ -9,7 +9,7 @@ See [example.pl](example.pl).
 
 ## Todo List
 
-- [ ] Relationship
-- [ ] Query(update, delete) with WHERE
+- [x] Query(update, delete) with WHERE
 - [ ] Implement join and left join
+- [ ] Relationships
 - [ ] MySQL support
