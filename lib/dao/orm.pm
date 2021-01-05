@@ -1,11 +1,13 @@
 package dao::orm;
 
+use strict 'vars';
+
 sub _default_table_name {
 
     # Use class name by default
     my ($class) = @_;
     my @list    = split( /:+/, $class );
-    my $table   = @list[$#list];
+    my $table   = $list[$#list];
 
     # Convert 'Ab' into '_ab'
     while ( $table =~ /[A-Z][a-z]/ ) {
@@ -84,8 +86,8 @@ sub get {
     my @list = @_;
 
     my $fields = "";
-    if ( defined $list ) {
-        foreach my $item ( @{$list} ) {
+    if (@list) {
+        foreach my $item (@list) {
             $fields .= "," . $item;
         }
         $fields =~ s/^,//;
@@ -95,7 +97,8 @@ sub get {
     }
 
     # WHERE conditions
-    my @params = (), $conds = "";
+    my @params = ();
+    my $conds  = "";
     if ( defined $self->{_conditions} ) {
         @params = $self->{_conditions}->{params};
         $conds  = "WHERE " . $self->{_conditions}->{string};
@@ -109,11 +112,13 @@ sub get {
         @params );
 
     # Related models
-    foreach my $model ( shift @{ $self->{_models} } ) {
+    foreach my $model ( @{ $self->{_models} } ) {
+
         # TODO handle related models
         my $func = $model->{relationHandler};
-        $self->$func($model, @array);
+        $self->$func( $model, @array );
     }
+    undef $self->{_models};
 
     return @array;
 }
@@ -132,10 +137,11 @@ sub save {
     my $self = shift;
 
     my $primary_key = $self->{_primary_key};
-    $id = $self->{$primary_key};
+    my $id          = $self->{$primary_key};
+
+    my $query  = "";
+    my @values = ();
     if ( defined $id ) {    # Update or insert
-        my $qyery  = "";
-        my @values = ();
         foreach my $key ( keys %{$self} ) {
             unless ( $key =~ /^_|^$primary_key\$|^\$/ ) {
                 $query .= ",`$key`=?";
@@ -155,7 +161,8 @@ sub save {
 
     my $fields = "";
     my $list   = "";
-    my @values = ();
+
+    @values = ();
     foreach my $key ( keys %{$self} ) {
         unless ( $key =~ /^_/ ) {
             my $value = $self->{$key};
@@ -182,7 +189,7 @@ sub save {
 sub destroy {
     my ( $self, $id ) = @_;
     my $primary_key = $self->{_primary_key};
-    my @cond_params, $cond_str;
+    my ( @cond_params, $cond_str );
     my $query;
 
     # WHERE conditions
@@ -217,15 +224,16 @@ sub update {
     }
 
     # WHERE conditions
-    my @cond_params, $cond_str;
+    my ( @cond_params, $cond_str );
     if ( defined $self->{_conditions} ) {
         @cond_params = $self->{_conditions}->{params};
         $cond_str    = " WHERE " . $self->{_conditions}->{string};
         undef $self->{_conditions};
     }
 
-    my $qyery  = "";
-    my @values = ();
+    my $query       = "";
+    my @values      = ();
+    my $primary_key = $self->{_primary_key};
     foreach my $key ( keys %{$hash} ) {
         unless ( $key =~ /^_|^$primary_key\$|^\$/ ) {
             $query .= ",`$key`=?";
@@ -241,11 +249,11 @@ sub update {
 sub create {
     my $self  = shift;
     my $class = ref $self;
-    my $orm, $db;
+    my ( $orm, $db );
 
     undef $self->{ $self->{_primary_key} };
 
-    if ( ( ref( $_[0] ) ) eq dao::db ) {
+    if ( ( ref( $_[0] ) ) eq 'dao::db' ) {
         $db = shift;
     }
     elsif ($class) {
