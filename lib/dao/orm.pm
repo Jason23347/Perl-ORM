@@ -52,25 +52,22 @@ sub _create_table {
         "CREATE TABLE IF NOT EXISTS " . $self->{_table} . '(' . $str . ')' );
 }
 
-sub find {
-    my ( $self, $key ) = @_;
+sub with {
+    my ( $self, $model, $foreign_key, $local_key ) = @_;
+    $self->{_models} or $self->{_models} = ();
 
-    my $sth = $self->{_db}->excuteWithHandle(
-        "SELECT * from "
-          . $self->{_table}
-          . " where "
-          . $self->{_primary_key}
-          . " =? LIMIT 1",
-        $key
-    );
-
-    my @status;
-    my $hash = $sth->fetchrow_hashref or return 0;
-    for my $key ( keys %{$hash} ) {
-        $self->{$key} = $hash->{$key};
-    }
-
+    my $tmp = $self->$model();
+    push @{ $self->{_models} }, $tmp;
     return $self;
+}
+
+sub find {
+    my ( $self, $id ) = @_;
+
+    # TODO Add limit 1
+    my @list = $self->where( $self->{_primary_key} . "=?", $id )->get();
+    if ( $#list lt 0 ) { return undef; }
+    return $self->assign( $list[0] );
 }
 
 sub where {
@@ -97,7 +94,7 @@ sub get {
         $fields = "*";
     }
 
-    # Load WHERE conditions
+    # WHERE conditions
     my @params = (), $conds = "";
     if ( defined $self->{_conditions} ) {
         @params = $self->{_conditions}->{params};
@@ -105,24 +102,30 @@ sub get {
         undef $self->{_conditions};
     }
 
-    my $sth =
-      $self->{_db}->excuteWithHandle(
+    # Do query
+    my @array =
+      $self->{_db}->excuteReturnArray(
         "SELECT " . $fields . " FROM " . $self->{_table} . " " . $conds,
         @params );
 
-    my @array = ();
-    while ( $row = $sth->fetchrow_hashref() ) {
-        push @array, $row;
+    # Related models
+    foreach my $model ( shift @{ $self->{_models} } ) {
+        # TODO handle related models
+        my $func = $model->{relationHandler};
+        $self->$func($model, @array);
     }
-    $sth->finish();
+
     return @array;
 }
 
 sub assign {
     my ( $self, $hash ) = @_;
     foreach my $key ( keys %{$hash} ) {
-        $self->{$key} = $hash->{$key};
+        unless ( $key =~ /^_/ ) {
+            $self->{$key} = $hash->{$key};
+        }
     }
+    return $self;
 }
 
 sub save {
@@ -164,7 +167,7 @@ sub save {
     }
     $fields =~ s/^,//;
     $list   =~ s/^,//;
-    my $sth = $self->{_db}->excuteWithHandle(
+    my $sth = $self->{_db}->excuteReturnHandle(
         "INSERT INTO "
           . $self->{_table} . " ("
           . $fields
@@ -203,7 +206,7 @@ sub destroy {
     }
 
     # TODO Soft delete
-    return $self->{_db}->excuteWithReturn( $query, @cond_params );
+    return $self->{_db}->excuteReturnRowsAffected( $query, @cond_params );
 }
 
 sub update {

@@ -19,7 +19,7 @@ $book->create(
     {
         title       => "test title",
         category    => "test cate",
-        author      => "test author",
+        author_id   => 1,
         last_update => time(),
         word_count  => 5678,
     }
@@ -33,7 +33,7 @@ book->create(
     {
         title       => "hello world",
         category    => "test cate2",
-        author      => "test author2",
+        author_id   => 2,
         last_update => time(),
         word_count  => 1234,
     }
