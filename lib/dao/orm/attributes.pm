@@ -24,4 +24,27 @@ sub where {
     return $self;
 }
 
+sub _num_valid {
+    my $num = shift;
+    return ( $num =~ /[1-9]?[0-9]+/ );
+}
+
+sub _assign {
+    my ( $self, $attr, $num ) = @_;
+    printf "%s %s %d\n", $self, $attr, $num;
+    _num_valid($num)
+      or die "Cannot set " . $attr . " to " . $num;
+
+    $self->{ "_db_" . $attr } = $num;
+    return $self;
+}
+
+sub limit {
+    _assign( shift, 'limit', shift );
+}
+
+sub offset {
+    _assign( shift, 'offset', shift );
+}
+
 1;

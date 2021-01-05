@@ -7,9 +7,12 @@ sub new {
 }
 
 sub get {
-    my $self = shift;
-
+    my $self   = shift;
     my $fields = "";
+    my $conds  = "";
+    my $limits = "";
+    my @params = ();
+
     if ( $_[0] ) {
         foreach my $item (@_) {
             $fields .= "," . $item;
@@ -21,18 +24,28 @@ sub get {
     }
 
     # WHERE conditions
-    my @params = ();
-    my $conds  = "";
     if ( defined $self->{_conditions} ) {
         @params = $self->{_conditions}->{params};
-        $conds  = "WHERE " . $self->{_conditions}->{string};
+        $conds  = " WHERE " . $self->{_conditions}->{string};
         undef $self->{_conditions};
+    }
+
+    # Limit
+    if ( $self->{_db_limit} ) {
+        $limits .= " limit " . $self->{_db_limit};
+        undef $self->{_db_limit};
+    }
+
+    # Offset
+    if ( $self->{_db_offset} ) {
+        $limits .= " offset " . $self->{_db_offset};
+        undef $self->{_db_offset};
     }
 
     # Do query
     my @array =
       $self->{_db}->execute_array(
-        "SELECT " . $fields . " FROM " . $self->{_table} . " " . $conds,
+        "SELECT " . $fields . " FROM " . $self->{_table} . $conds . $limits,
         @params );
 
     # Related models
