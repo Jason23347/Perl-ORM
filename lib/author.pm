@@ -1,8 +1,9 @@
 package author;
 
 use dao::orm;
+use dao::orm::relationship;
 
-our @ISA = qw(dao::orm);
+our @ISA = qw(dao::orm dao::orm::relationship);
 
 sub new {
     my $class = shift;
@@ -13,7 +14,7 @@ sub new {
 
 sub books {
     my $self = shift;
-    return $self->hasMany(books);
+    return $self->hasMany(book, 'books');
 }
 
 sub sync {

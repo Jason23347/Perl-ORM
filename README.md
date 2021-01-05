@@ -12,7 +12,7 @@ See [example.pl](example.pl).
 - [x] Query(update, delete) with WHERE
 - [ ] Implement join and left join
 - [x] Relationship: 1 to 1
-- [ ] Relationship: 1 to many
+- [x] Relationship: 1 to many
 - [ ] Relationship: many to many
 - [ ] Limit
 - [ ] Offset and skip

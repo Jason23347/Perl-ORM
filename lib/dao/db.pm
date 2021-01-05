@@ -40,7 +40,7 @@ sub _prepare {
     }
 }
 
-sub excuteReturnHandle {
+sub execute_handle {
     my ( $self, $query ) = ( shift, shift );
 
     my $sth = $self->_prepare($query);
@@ -51,10 +51,10 @@ sub excuteReturnHandle {
     return $sth;
 }
 
-sub excuteReturnArray {
+sub execute_array {
     my ( $self, $query ) = ( shift, shift );
 
-    my $sth   = $self->excuteReturnHandle( $query, @_ );
+    my $sth   = $self->execute_handle( $query, @_ );
     my @array = ();
     while ( $row = $sth->fetchrow_hashref() ) {
         push @array, $row;
@@ -62,7 +62,7 @@ sub excuteReturnArray {
     return @array;
 }
 
-sub excuteReturnRowsAffected {
+sub execute_rows_affected {
     my ( $self, $query ) = ( shift, shift );
 
     my $sth = $self->_prepare($query);
@@ -75,9 +75,9 @@ sub excuteReturnRowsAffected {
     return $res;
 }
 
-sub excute {
+sub execute {
     my $self = shift;
-    my $sth  = $self->excuteReturnHandle(@_);
+    my $sth  = $self->execute_handle(@_);
     return $sth->finish();
 }
 

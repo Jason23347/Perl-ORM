@@ -50,7 +50,7 @@ sub _create_table {
         $str .= '"' . $key . '" ' . $hash->{$key} . ',';
     }
     $str =~ s/,$//;
-    return $self->{_db}->excute(
+    return $self->{_db}->execute(
         "CREATE TABLE IF NOT EXISTS " . $self->{_table} . '(' . $str . ')' );
 }
 
@@ -83,11 +83,10 @@ sub where {
 
 sub get {
     my $self = shift;
-    my @list = @_;
 
     my $fields = "";
-    if (@list) {
-        foreach my $item (@list) {
+    if ($_[0]) {
+        foreach my $item (@_) {
             $fields .= "," . $item;
         }
         $fields =~ s/^,//;
@@ -107,7 +106,7 @@ sub get {
 
     # Do query
     my @array =
-      $self->{_db}->excuteReturnArray(
+      $self->{_db}->execute_array(
         "SELECT " . $fields . " FROM " . $self->{_table} . " " . $conds,
         @params );
 
@@ -115,7 +114,7 @@ sub get {
     foreach my $model ( @{ $self->{_models} } ) {
 
         # TODO handle related models
-        my $func = $model->{relationHandler};
+        my $func = $model->{handler};
         $self->$func( $model, @array );
     }
     undef $self->{_models};
@@ -155,7 +154,7 @@ sub save {
           . $query
           . " WHERE "
           . $primary_key . "=?";
-        $self->{_db}->excute( $query, @values, $id );
+        $self->{_db}->execute( $query, @values, $id );
         return $self;
     }
 
@@ -174,7 +173,7 @@ sub save {
     }
     $fields =~ s/^,//;
     $list   =~ s/^,//;
-    my $sth = $self->{_db}->excuteReturnHandle(
+    my $sth = $self->{_db}->execute_handle(
         "INSERT INTO "
           . $self->{_table} . " ("
           . $fields
@@ -183,7 +182,6 @@ sub save {
         @values
     );
     $self->{$primary_key} = $sth->last_insert_id();
-    $sth->finish();
 }
 
 sub destroy {
@@ -213,7 +211,7 @@ sub destroy {
     }
 
     # TODO Soft delete
-    return $self->{_db}->excuteReturnRowsAffected( $query, @cond_params );
+    return $self->{_db}->execute_rows_affected( $query, @cond_params );
 }
 
 sub update {
@@ -243,7 +241,7 @@ sub update {
     $query =~ s/^,//;
     $query = "UPDATE " . $self->{_table} . " set " . $query . $cond_str;
     printf "%s\n", $query;
-    $self->{_db}->excute( $query, @values, @cond_params );
+    $self->{_db}->execute( $query, @values, @cond_params );
 }
 
 sub create {
