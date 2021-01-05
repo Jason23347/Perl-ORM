@@ -9,10 +9,7 @@ See [example.pl](example.pl).
 
 ## Todo List
 
-- [x] Query(update, delete) with WHERE
-- [x] Limit annd offset
-- [x] Relationship: 1 to 1
-- [x] Relationship: 1 to many
+- [ ] Ordering
+- [ ] Join and left join
 - [ ] Relationship: many to many
-- [ ] Implement join and left join
 - [ ] MySQL support
