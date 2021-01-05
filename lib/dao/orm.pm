@@ -204,8 +204,6 @@ sub updateOrCreate {
 
     $orm = $class->new($db);
 
-    return 1;
-
     # my $orm = $self->new($db);
     foreach my $key ( keys %{$hash} ) {
         $orm->{$key} = $hash->{$key};
