@@ -17,13 +17,18 @@ sub author {
     return $self->hasOne( author, 'id', 'author_id' );
 }
 
+sub categories {
+    my $self = shift;
+    return $self->manyToMany( category, 'categories', 'book_category',
+        'category_id', 'book_id' );
+}
+
 sub sync {
     my ($self) = @_;
     $self->_create_table(
         {
             'id'          => 'INTEGER PRIMARY KEY AUTOINCREMENT',
             'title'       => 'CHAR(128) NOT NULL',
-            'category'    => 'INTEGER NOT NULL',
             'author_id'   => 'INTEGER NOT NULL',
             'status'      => 'SMALLINT DEFAULT 0',
             'last_update' => 'INTEGER NOT NULL',

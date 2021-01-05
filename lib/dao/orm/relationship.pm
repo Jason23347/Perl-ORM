@@ -26,7 +26,7 @@ sub hasOne {
 
 sub hasOneHandler {
     my ( $self, $model, @array ) = @_;
-    my $class       = $model->{model}->new( $self->{_db} );
+    my $other       = $model->{model}->new( $self->{_db} );
     my $local_key   = $model->{local_key};
     my $foreign_key = $model->{foreign_key};
     my $primary_key = $self->{_primary_key};
@@ -42,7 +42,7 @@ sub hasOneHandler {
     # Query related models
     my @model_list = $self->{_db}->execute_array(
         "SELECT * FROM "
-          . $class->{_table}
+          . $other->{_table}
           . " WHERE "
           . $foreign_key . " in ("
           . $id_query . ")",
@@ -85,7 +85,7 @@ sub hasMany {
 
 sub hasManyHandler {
     my ( $self, $model, @array ) = @_;
-    my $class       = $model->{model}->new( $self->{_db} );
+    my $other       = $model->{model}->new( $self->{_db} );
     my $local_key   = $model->{local_key};
     my $foreign_key = $model->{foreign_key};
 
@@ -100,7 +100,7 @@ sub hasManyHandler {
     # Query related models
     my @model_list = $self->{_db}->execute_array(
         "SELECT * FROM "
-          . $class->{_table}
+          . $other->{_table}
           . " WHERE "
           . $foreign_key . " in ("
           . $id_query . ")",
@@ -109,13 +109,98 @@ sub hasManyHandler {
 
     # TODO Optimize
     foreach my $orm (@array) {
-        my @list = ();
+        my $list = ();
         foreach my $tmp (@model_list) {
             if ( $orm->{$local_key} eq $tmp->{$foreign_key} ) {
-                push @list, $tmp;
+                push @{$list}, $tmp;
             }
         }
-        $orm->{ $model->{attr} } = \@list;
+        $orm->{ $model->{attr} } = $list;
+    }
+}
+
+sub manyToMany {
+    my ( $self, $model, $attr, $table, $foreign_key, $local_key ) = @_;
+    $table
+      or die "Adjecency table not specified ("
+      . ( ref $self ) . " <-> "
+      . $model . ")";
+
+    return {
+        handler   => 'manyToManyHandler',
+        model     => $model,
+        table     => $table,
+        attr      => $attr,
+        local_key => (
+            $local_key
+              or default_key( ref $self )
+        ),
+        foreign_key => (
+            $foreign_key
+              or default_key( ref $model )
+        )
+    };
+}
+
+sub manyToManyHandler {
+    my ( $self, $hash, @array ) = @_;
+    my $other       = $hash->{model}->new( $self->{_db} );
+    my $local_key   = $hash->{local_key};
+    my $foreign_key = $hash->{foreign_key};
+    my $primary_key = $self->{_primary_key};
+
+    my $id_query = "";
+    my @id_list  = ();
+    foreach my $orm (@array) {
+        $id_query .= ",?";
+        push @id_list, $orm->{$primary_key};
+    }
+    $id_query =~ s/^,//;
+
+    # Query adjeceny table
+    my @tmp_list = $self->{_db}->execute_array(
+        "SELECT * FROM "
+          . $hash->{table}
+          . " WHERE "
+          . $local_key . " in ("
+          . $id_query . ")",
+        @id_list
+    );
+
+    $id_query = "";
+    @id_list  = ();
+    foreach my $orm (@tmp_list) {
+        $id_query .= ",?";
+        push @id_list, $orm->{$foreign_key};
+    }
+    $id_query =~ s/^,//;
+
+    # Query related models
+    my @model_list = $self->{_db}->execute_array(
+        "SELECT * FROM "
+          . $other->{_table}
+          . " WHERE "
+          . $other->{_primary_key} . " in ("
+          . $id_query . ")",
+        @id_list
+    );
+
+    # TODO Optimize
+    my $list;
+    foreach my $orm (@array) {
+        $list = ();
+        foreach my $tmp (@tmp_list) {
+            if ( $tmp->{$local_key} eq $orm->{$primary_key} ) {
+                foreach my $model (@model_list) {
+                    if ( $tmp->{$foreign_key} eq
+                        $model->{ $other->{_primary_key} } )
+                    {
+                        push @$list, $model;
+                    }
+                }
+            }
+        }
+        $orm->{ $hash->{attr} } = $list;
     }
 }
 

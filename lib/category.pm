@@ -8,7 +8,7 @@ our @ISA = qw(dao::orm dao::orm::relationship);
 sub new {
     my $class = shift;
     my $self  = $class->SUPER::new(@_);
-
+    $self->{_table} = 'categories';
     return bless $self, $class;
 }
 

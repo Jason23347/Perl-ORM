@@ -9,7 +9,7 @@ See [example.pl](example.pl).
 
 ## Todo List
 
+- [x] Relationship: many to many
 - [ ] Ordering
 - [ ] Join and left join
-- [ ] Relationship: many to many
 - [ ] MySQL support
