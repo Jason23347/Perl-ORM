@@ -151,4 +151,31 @@ sub create {
     }
 }
 
+sub syncAdjacency {
+    my ( $self, $other, $table_name, $local_id, $foreign_id, $primary_key ) =
+      @_;
+    unless ( defined $table_name ) {
+        $table_name = ( ref $self ) . '_' . ( ref $other );
+        $local_id   = ( ref $self ) . '_id';
+        $foreign_id = ( ref $other ) . '_id';
+    }
+    else {
+        $local_id and $foreign_id
+          or die "Please specify id columns for adjecency table " . $table_name;
+        unless ($primary_key) {
+            $primary_key = 'id';
+        }
+    }
+
+    my $tmp = dao::orm->new( $self->{_db} );
+    $tmp->{_table} = 'book_category';
+    $tmp->_create_table(
+        {
+            $primary_key => 'INTEGER PRIMARY KEY AUTOINCREMENT',
+            $local_id    => 'INTEGER NOT NULL',
+            $foreign_id  => 'INTEGER NOT NULL',
+        }
+    );
+}
+
 1;
