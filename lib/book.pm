@@ -23,7 +23,7 @@ sub sync {
         {
             'id'          => 'INTEGER PRIMARY KEY AUTOINCREMENT',
             'title'       => 'CHAR(128) NOT NULL',
-            'category'    => 'CHAR(32) NOT NULL',
+            'category'    => 'INTEGER NOT NULL',
             'author_id'   => 'INTEGER NOT NULL',
             'status'      => 'SMALLINT DEFAULT 0',
             'last_update' => 'INTEGER NOT NULL',
