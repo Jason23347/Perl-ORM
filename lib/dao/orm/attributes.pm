@@ -1,11 +1,5 @@
 package dao::orm::attributes;
 
-sub new {
-    my $class = shift;
-    my $self  = {};
-    return bless $self, $class;
-}
-
 sub with {
     my ( $self, $model, $foreign_key, $local_key ) = @_;
     $self->{_models} or $self->{_models} = ();

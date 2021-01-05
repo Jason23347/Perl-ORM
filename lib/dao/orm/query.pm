@@ -1,11 +1,5 @@
 package dao::orm::query;
 
-sub new {
-    my $class = shift;
-    my $self  = {};
-    return bless $self, $class;
-}
-
 sub get {
     my $self   = shift;
     my $fields = "";

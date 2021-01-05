@@ -3,12 +3,6 @@ package dao::orm::relationship;
 use strict;
 use warnings;
 
-sub new {
-    my $class = shift;
-    my $self  = {};
-    return bless $self, $class;
-}
-
 sub default_key {
     shift . '_id';
 }
