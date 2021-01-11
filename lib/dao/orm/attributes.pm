@@ -81,20 +81,35 @@ sub where {
             last unless ( _validate_in($remain) );      # ( 1, 2, 3 )
         }
       JOINT:
-        last unless _validate( $remain, '^AND\s+' );
+        last unless _validate( $remain, '^AND\s+' );    # AND
     }
 
     if ( $remain ne '' ) {
-        die "Unmatched WHERE clause " . $str;
+        die "Unmatched WHERE clause near " . $remain;
     }
     return $self;
+}
+
+sub _validate_order_by {
+    my $str = shift;
+
+    _validate( $str, '\w+\s+[DESC|ASC]\s*' ) or return 0;
+    for ( ; ; ) {
+        last unless _validate( $remain, ',\s*' );
+        _validate( $remain, '\w+\s+[DESC|ASC]\s*' ) or return 0;
+    }
+    return $remain;
 }
 
 sub orderBy {
     my $self = shift;
     $self->{_db_order} = shift;
-    $self->{_db_order} =~ /\s*\w+\s+[desc|asc]?(\s*,\s*\w+\s+[desc|asc]?)*/
-      or die "Not an order by clause";
+
+    my $str = $self->{_db_order};
+    $str =~ tr/[a-z]/[A-Z]/;    # Upcase
+    $str =~ tr/^\s+//;          # Trim spaces
+
+    _validate_order_by($str) or die "Not an order by clause: " . $self->{_db_order};
     return $self;
 }
 
