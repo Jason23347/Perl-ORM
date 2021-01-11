@@ -18,10 +18,10 @@ sub get {
     }
 
     # WHERE conditions
-    if ( defined $self->{_conditions} ) {
-        @params = $self->{_conditions}->{params};
-        $conds  = " WHERE " . $self->{_conditions}->{string};
-        undef $self->{_conditions};
+    if ( defined $self->{_db_conds} ) {
+        @params = $self->{_db_conds}->{params};
+        $conds  = " WHERE " . $self->{_db_conds}->{string};
+        undef $self->{_db_conds};
     }
 
     # Limit
@@ -34,6 +34,12 @@ sub get {
     if ( $self->{_db_offset} ) {
         $limits .= " offset " . $self->{_db_offset};
         undef $self->{_db_offset};
+    }
+
+    # Order
+    if ($self->{_db_order}) {
+        $limits .= " order by ".$self->{_db_order};
+        undef $self->{_db_order};
     }
 
     # Do query
@@ -70,10 +76,10 @@ sub destroy {
     my $query;
 
     # WHERE conditions
-    if ( defined $self->{_conditions} ) {
-        @cond_params = $self->{_conditions}->{params};
-        $cond_str    = " WHERE " . $self->{_conditions}->{string};
-        undef $self->{_conditions};
+    if ( defined $self->{_db_conds} ) {
+        @cond_params = $self->{_db_conds}->{params};
+        $cond_str    = " WHERE " . $self->{_db_conds}->{string};
+        undef $self->{_db_conds};
         $query = "DELETE FROM " . $self->{_table} . $cond_str;
     }
     else {
@@ -102,10 +108,10 @@ sub update {
 
     # WHERE conditions
     my ( @cond_params, $cond_str );
-    if ( defined $self->{_conditions} ) {
-        @cond_params = $self->{_conditions}->{params};
-        $cond_str    = " WHERE " . $self->{_conditions}->{string};
-        undef $self->{_conditions};
+    if ( defined $self->{_db_conds} ) {
+        @cond_params = $self->{_db_conds}->{params};
+        $cond_str    = " WHERE " . $self->{_db_conds}->{string};
+        undef $self->{_db_conds};
     }
 
     my $query       = "";
