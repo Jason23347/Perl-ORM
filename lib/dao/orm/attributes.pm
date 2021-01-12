@@ -24,7 +24,7 @@ sub _validate_field {
 
 sub _validate_value {
     return _validate( $_[0],
-        '^([0-9]+|(\\\'[^,\s\"]+\\\')|(\"[^,\s\\\']+\"))\s*' );
+        '^(\?|[0-9]+|(\\\'[^,\s\"]+\\\')|(\"[^,\s\\\']+\"))\s*' );
 }
 
 sub _validate_operators {
