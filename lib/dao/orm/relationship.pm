@@ -142,12 +142,22 @@ sub manyToMany {
     };
 }
 
+sub _array_to_hash {
+    my ( $key, @array ) = @_;
+    my %hash = ();
+    foreach my $item (@array) {
+        $hash{ $item->{$key} } = \$item;
+    }
+    return %hash;
+}
+
 sub manyToManyHandler {
     my ( $self, $hash, @array ) = @_;
     my $other       = $hash->{model}->new( $self->{_db} );
     my $local_key   = $hash->{local_key};
     my $foreign_key = $hash->{foreign_key};
     my $primary_key = $self->{_primary_key};
+    my $other_key   = $other->{_primary_key};
 
     my $id_query = "";
     my @id_list  = ();
@@ -185,22 +195,27 @@ sub manyToManyHandler {
         @id_list
     );
 
-    # TODO Optimize
-    my $list;
+    my $table;
+    foreach my $tmp (@tmp_list) {
+        my $local   = $tmp->{$local_key};
+        my $foreign = $tmp->{$foreign_key};
+        my $list    = \$table->{$local};
+        push @$$list, $foreign;
+    }
+
+    my %orm_hash   = _array_to_hash( $primary_key, @array );
+    my %model_hash = _array_to_hash( $other_key,   @model_list );
+
     foreach my $orm (@array) {
-        $list = ();
-        foreach my $tmp (@tmp_list) {
-            if ( $tmp->{$local_key} eq $orm->{$primary_key} ) {
-                foreach my $model (@model_list) {
-                    if ( $tmp->{$foreign_key} eq
-                        $model->{ $other->{_primary_key} } )
-                    {
-                        push @$list, $model;
-                    }
-                }
+        my $list = \$orm->{ $hash->{attr} };
+        $$list = ();
+        my @key_list = $table->{ $orm->{$primary_key} };
+        foreach my $keys (@key_list) {
+            foreach my $key (@$keys) {
+                my $tmp = $model_hash{$key};
+                push @$$list, $$tmp;
             }
         }
-        $orm->{ $hash->{attr} } = $list;
     }
 }
 
